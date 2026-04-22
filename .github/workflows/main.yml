@@ -1,1 +1,53 @@
+name: Buscar URLs de prefeituras e governos
 
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 3 * * *'
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+
+    steps:
+      - name: Baixar repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar dependências
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Verificar arquivo de entrada
+        run: |
+          test -f input/base_contatos.csv || (echo "Arquivo input/base_contatos.csv não encontrado." && exit 1)
+
+      - name: Rodar script
+        env:
+          INPUT_PATH: input/base_contatos.csv
+          OUTPUT_MAIN_CSV: output/base_contatos_municipais_com_urls_v3.csv
+          OUTPUT_MAIN_XLSX: output/base_contatos_municipais_com_urls_v3.xlsx
+          OUTPUT_REVIEW_CSV: output/revisao_urls_prefeituras_v3.csv
+          OUTPUT_REVIEW_XLSX: output/revisao_urls_prefeituras_v3.xlsx
+        run: |
+          python run_prefeituras_urls.py
+
+      - name: Salvar arquivos gerados como artefato
+        uses: actions/upload-artifact@v4
+        with:
+          name: resultados-urls-prefeituras
+          path: output/
+
+      - name: Commitar resultados no repositório
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add output/
+          git diff --cached --quiet || git commit -m "Atualiza resultados das URLs"
+          git push
