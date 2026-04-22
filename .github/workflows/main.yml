@@ -43,11 +43,3 @@ jobs:
         with:
           name: resultados-urls-prefeituras
           path: output/
-
-      - name: Commitar resultados no repositório
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add output/
-          git diff --cached --quiet || git commit -m "Atualiza resultados das URLs"
-          git push
